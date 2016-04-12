@@ -8,16 +8,16 @@
 $image_url = "http://virtuemart.site.com/components/com_virtuemart/shop_image/product/";
 $api_key = "";
 $folder_id = "C3AD0815CF3542C9A598730CFD264A0A";
-$file = fopen('3column_img_list.csv','r');
-$url = "http://localhost:8888/razuna/raz2/dam/index.cfm?";
-$label_url = "http://localhost:8888/razuna//global/api2/label.cfc?";
-$search_url = "http://localhost:8888/razuna//global/api2/search.cfc?";
+$file = fopen('filename.csv','r');
+$url = "http://localhost:8080/razuna/raz2/dam/index.cfm?";
+$label_url = "http://localhost:8080/razuna//global/api2/label.cfc?";
+$search_url = "http://localhost:8080/razuna//global/api2/search.cfc?";
 $counter = 0;
 
 ob_start();
 while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
 
-    //lae alla pilt
+    //Download picture
 
     if (empty($row[1]) && empty($row[2])) {
         $pilt_dest = '';
@@ -56,23 +56,6 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
             $picture_name = $picture_explode[0];
         }
     }
-
-    /*elseif (!empty($row[2])) {
-        if (!copy($pilt,'upload/'.$row[1]) && !copy($pilt,'upload/'.$row[2])) {
-            $pilt_dest = '';
-        }
-        elseif (!copy($pilt,'upload/'.$row[1]) && copy($pilt,'upload/'.$row[2])) {
-            $pilt_dest = 'upload/'.$row[2];
-        }
-        elseif (copy($pilt,'upload/'.$row[1]) && !copy($pilt,'upload/'.$row[2])) {
-            $pilt_dest = 'upload/'.$row[1];
-        }
-        elseif(copy($pilt,'upload/'.$row[1]) && copy($pilt,'upload/'.$row[2])) {
-            $pilt_dest = 'upload/'.$row[2];
-        }
-    }*/
-    //copy($pilt,'upload/'.$row[2]);
-
     
     $curl_file_upload = new CURLFile($pilt_dest);
     if (empty($pilt_dest)) {
@@ -80,7 +63,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
         }
     else {
         $counter++;
-        //otsi label ja saa labeli id
+        //find label and get label id
         $search_label = curl_init();
         curl_setopt($search_label, CURLOPT_URL, $label_url);
         curl_setopt($search_label, CURLOPT_POST, true);
@@ -96,11 +79,12 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
         curl_close($search_label);
         $decode = json_decode($search_label_execute);
 
-        //kui tühi siis sisesta väärtuseks null
+        //if empty then put label_id as empty string
         if (empty($decode->DATA)) {
             $label_id = '';
             echo "Did not found label continuing... \n";
-        } //kui väärtus on olemas siis kontrolli üle saadud väärtused ja võta label id väärtus
+        }
+        //if label gets awnser then check it and get label id
         else {
             foreach ($decode->DATA as $label) {
                 if ($label[1] === $row[0]) {
@@ -110,7 +94,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
             }
         }
 
-        //otsi, kas pilt on eelnevalt olemas
+        //Check if picture exists
         $search_picture = curl_init();
         curl_setopt($search_picture, CURLOPT_URL, $search_url);
         curl_setopt($search_picture, CURLOPT_POST, true);
@@ -138,7 +122,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
             }
         }
 
-        //vaadata kas label on pildile omistatud juba
+        //Check if picture is added the right label
         if (!empty($picture_id)) {
 
             $search_picture_label = curl_init();
@@ -157,7 +141,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
             curl_close($search_picture_label);
             $search_picture_label_decode = json_decode($search_picture_label_execute);
 
-            //kui pildi otsingus label väljad ei ole tühjad ja on olemas label_id
+            //if picture label not empty and label_id exists
             if (!empty($search_picture_label_decode->DATA) && !empty($label_id)) {
                 $label_exists = FALSE;
                 foreach ($search_picture_label_decode->DATA as $label_picture) {
@@ -166,7 +150,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
                         $label_exists = TRUE;
                     }
                 }
-                //Kui pildi juurest ei leia labelit siis lisa label juurde olemasolevale.
+                //If did not found the label in that picture then add the missing label.
                 if ($label_exists == FALSE) {
                     $add_picture_label = curl_init();
                     curl_setopt($add_picture_label, CURLOPT_URL, $label_url);
@@ -191,12 +175,11 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
 
 
 
-        //kui label ei ole olemas, siis sisesta uus ja saa labeli id, sisesta uus pilt, kui pole olmas
+        //if labe does not exist then insert and get the label id
         if (empty($label_id) && empty($picture_id)) {
             echo "Uploading picture and creating new lable\n";
 
-            ///Pildi üles laadimine ja assetid saamine
-
+            //Uploading picture and getting asset id
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
@@ -219,7 +202,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
 
             $picture_id = $file_decode->assetid;
 
-            //uue labeli loomine
+            //Creating new label
             $create_label = curl_init();
             curl_setopt($create_label, CURLOPT_URL, $label_url);
             curl_setopt($create_label, CURLOPT_POST, true);
@@ -237,7 +220,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
 
             $label_id = $create_label_decode->label_id;
 
-            //lisa label pildile
+            //Adding label to picture
             echo "Adding labels to picture\n\n";
             $add_label_to_picture = curl_init();
             curl_setopt($add_label_to_picture, CURLOPT_URL, $label_url);
@@ -255,12 +238,12 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
             ob_flush();
             curl_close($add_label_to_picture);
 
-        } //kui on label olamas, kuid pilt puudu siis sisesta uus pilt ja seo labeliga
+        } //if label exist, but missing picture then insert new picture and add the existing label to picture
         elseif (!empty($label_id) && empty($picture_id)) {
 
             echo "Missing picture: adding picture\n";
 
-            ///Pildi üles laadimine ja assetid saamine
+            //Uploading picture and getting asset id
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
@@ -283,7 +266,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
 
             $picture_id = $file_decode->assetid;
 
-            //lisa label pildile
+            //Adding label to picture
             echo "Adding labels to picture\n\n";
             $add_label_to_picture = curl_init();
             curl_setopt($add_label_to_picture, CURLOPT_URL, $label_url);
@@ -300,11 +283,12 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
             $add_label_to_picture_execute = curl_exec($add_label_to_picture);
             ob_flush();
             curl_close($add_label_to_picture);
-        } //kui pilt olemas, kuid label puudu siis sisesta uus label ja seo pildiga
+        }
+        //if picture exist, but label missing. Insert new label and add label to existing picture
         elseif (empty($label_id) && !empty($picture_id)) {
 
             echo "Missing label: Adding label\n";
-            //uue labeli loomine
+            //Creating new label
             $create_label = curl_init();
             curl_setopt($create_label, CURLOPT_URL, $label_url);
             curl_setopt($create_label, CURLOPT_POST, true);
@@ -322,7 +306,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
 
             $label_id = $create_label_decode->label_id;
 
-            //lisa label pildile
+            //adding label to picture
             echo "Adding labels to picture\n\n";
             $add_label_to_picture = curl_init();
             curl_setopt($add_label_to_picture, CURLOPT_URL, $label_url);
@@ -339,7 +323,8 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
             $add_label_to_picture_execute = curl_exec($add_label_to_picture);
             ob_flush();
             curl_close($add_label_to_picture);
-        } //kui label on olemas ja pilt ka siis ära tee midagi
+        }
+        //if label and picture exist then doing nothing
         else {
             echo "Label and picture exist: doing nothing\n\n";
         }
@@ -349,4 +334,8 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
 
 ob_end_flush();
 
+/*
+TODO
+    Add auto insert "Main, Thumbnail" Label id values from razuna
+*/
 

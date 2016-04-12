@@ -158,7 +158,7 @@ while(($row = fgetcsv($file, 0, ";")) !== FALSE) {
             $search_picture_label_decode = json_decode($search_picture_label_execute);
 
             //kui pildi otsingus label väljad ei ole tühjad ja on olemas label_id
-            elseif (!empty($search_picture_label_decode->DATA) && !empty($label_id)) {
+            if (!empty($search_picture_label_decode->DATA) && !empty($label_id)) {
                 $label_exists = FALSE;
                 foreach ($search_picture_label_decode->DATA as $label_picture) {
                     if ($label_picture[1] === $label_id) {

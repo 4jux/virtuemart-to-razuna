@@ -1,9 +1,9 @@
 # virtuemart-to-razuna
 Movin pictures from virtuemart to razuna and adding labels.
 
-The projeckt is on going test for simplify virtuemart move over to magento.
+The project is on going test for simplify virtuemart move over to magento.
 
-Desided to keep magento pictures seperatly in the Razuna DB.
+Desided to keep magento pictures separately in the Razuna DB.
 
 So magento searches pictures from Razuna DB by the product SKU. 
 
@@ -11,7 +11,7 @@ Script imports pictures from virtuemart and adds them to Razuna and adds SKU(in 
 
 **To get needed data from virtuemart mysql**
 
-First make sql recuest
+First make sql request
 
 ```
 SELECT
@@ -21,3 +21,6 @@ FROM
 ```
 
 If using phpmyadmin then export the request to csv file.
+
+**NB! Allow duplicate photo import.**
+Razuna apiupload does not check unique file name on upload.
